@@ -39,6 +39,7 @@ void htlcredeem(const std::string& htlc_db_id, const std::string& preimage)
     // check sender
     // check preimage
     // redeem fund to sender
+    // remove record
 }
 ```
 
@@ -54,6 +55,7 @@ void htlcrefund(const std::string& htlc_db_id)
     // check htlc_db_id
     // check sender
     // refund to sender
+    // remove record
 }
 ```
 
