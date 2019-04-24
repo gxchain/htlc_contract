@@ -15,8 +15,15 @@ HTLC合约基于hashlock和timelock，实现从存款人(depositor)到收款人(
 合约action定义：
 
 ```c++
-        /// @abi action
-        void htlccreate(const std::string& from, const std::string& to, const checksum256& preimage_hash, uint64_t preimage_length, uint64_t expiration)
+/// @abi action
+void htlccreate(const std::string& from, const std::string& to, const checksum256& preimage_hash, uint64_t preimage_length, uint64_t expiration)
+{
+    // check from, assert to
+    // check preimage_length
+    // check expiration
+    // get asset_id and amount
+    // create htlc record
+}
 ```
 
 #### 2. htlcredeem
@@ -25,8 +32,14 @@ HTLC合约基于hashlock和timelock，实现从存款人(depositor)到收款人(
 
 合约action定义：
 ```c++
-        /// @abi action
-        void htlcredeem(const std::string& htlc_db_id, const std::string& preimage)
+/// @abi action
+void htlcredeem(const std::string& htlc_db_id, const std::string& preimage)
+{
+    // check htlc_db_id
+    // check sender
+    // check preimage
+    // redeem fund to sender
+}
 ```
 
 #### 3. htlcrefund
@@ -35,8 +48,13 @@ HTLC合约基于hashlock和timelock，实现从存款人(depositor)到收款人(
 
 合约action定义：
 ```c++
-    /// @abi action
-    void htlcrefund(const std::string& htlc_db_id)
+/// @abi action
+void htlcrefund(const std::string& htlc_db_id)
+{
+    // check htlc_db_id
+    // check sender
+    // refund to sender
+}
 ```
 
 ## 表结构：
