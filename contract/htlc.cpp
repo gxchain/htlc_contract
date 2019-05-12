@@ -51,8 +51,10 @@ void htlc::htlcredeem(const uint64_t htlc_db_id, const string preimage) {
     graphene_assert(t_htlc != htlcrecords.end(), "htlc transaction record does not exist");
     graphene_assert(t_htlc->preimage_size == preimage_len, "Given the preimage and the length of the recorded preimage do not want to be the same");
 
+    int64_t now = get_head_block_time();
+    graphene_assert(t_htlc->expiration >= now, "htlc transaction has expired");
+
     checksum256 t_preimage_hash;
-    // sha256(const_cast<char *>(preimage.c_str()), preimage.length(), &t_preimage_hash);
     sha256((char *) &preimage, preimage.length(), &t_preimage_hash);
 
     graphene_assert(t_htlc->preimage_hash == t_preimage_hash, "the preimage is not in line with expectations");
@@ -74,7 +76,7 @@ void htlc::htlcrefund(const uint64_t htlc_db_id) {
     uint64_t sender = get_trx_sender();
     sub_balances(t_htlc->from, t_htlc->amount, sender);
     my_withdraw_asset(_self, t_htlc->from, t_htlc->amount.asset_id, t_htlc->amount.amount);
-    
+
     htlcrecords.erase(t_htlc);
 }
 
