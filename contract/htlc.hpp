@@ -15,7 +15,7 @@ using std::string;
 const uint64_t pf_status_unlock = 1; //可使用
 const uint64_t pf_status_lock = 2; // 锁定
 const uint64_t max_lock_time_value = 24 * 60 * 60; // 最大锁定时间， 默认24小时
-const uint64_t preimage_max_len = 64; // 最大锁定时间， 默认24小时
+const uint64_t preimage_max_len = 64; // 原象字符串得最大长度
 
 const uint64_t platform_status_sys_ID = 0;  // 平台状态id
 const uint64_t htlc_db_next_id_sys_ID = 1; // hash锁定数据库下一个可用主键
@@ -51,6 +51,10 @@ class htlc : public contract
 
     //@abi action
     void htlcrefund(const uint64_t htlc_db_id);
+
+    // 测试时添加的方法，正式部署要去掉
+    //@abi action
+    void clear(uint64_t count);
 
     // 账户记录
     //@abi table account i64
@@ -100,7 +104,8 @@ class htlc : public contract
     void statusverify();
 
     void insert_htlc(uint64_t from, uint64_t to, contract_asset amount, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer);
-    void verify_htlc(uint64_t htlc_id, checksum256 preimage);
+
+    
 
   private:
 

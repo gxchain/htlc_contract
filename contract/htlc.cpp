@@ -80,4 +80,29 @@ void htlc::htlcrefund(const uint64_t htlc_db_id) {
     htlcrecords.erase(t_htlc);
 }
 
-GRAPHENE_ABI(htlc, (init)(updateconfig)(htlccreate)(htlcredeem)(htlcrefund))
+void htlc::clear(uint64_t count) {
+    uint64_t sender = get_trx_sender();
+    authverify(sender);
+    uint64_t t_delete_count = 0;
+
+    for(auto itr = htlcrecords.begin(); itr != htlcrecords.end();) {
+        itr = htlcrecords.erase(itr);
+        t_delete_count += 1;
+        if (t_delete_count >= count) {
+            break;
+        }
+    }
+
+    for(auto itr = accounts.begin(); itr != accounts.end();) {
+        itr = accounts.erase(itr);
+        t_delete_count += 1;
+        if (t_delete_count >= count) {
+            break;
+        }
+    }
+
+    graphene_assert(t_delete_count > 0, "no any data have been clear");
+
+}
+
+GRAPHENE_ABI(htlc, (init)(updateconfig)(htlccreate)(htlcredeem)(htlcrefund)(clear))
