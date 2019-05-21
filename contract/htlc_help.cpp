@@ -2,7 +2,7 @@
 
 using namespace graphene;
 
-void htlc::insert_htlc(uint64_t from, uint64_t to, contract_asset amount, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer) {
+void htlc::insert_htlc(uint64_t from, uint64_t to, contract_asset amount, string hash_algorithm, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer) {
     uint64_t pk = get_sysconfig(htlc_db_next_id_sys_ID);
     int64_t now = get_head_block_time();
     htlcrecords.emplace(fee_payer, [&](auto &a_htlc) {
@@ -10,6 +10,7 @@ void htlc::insert_htlc(uint64_t from, uint64_t to, contract_asset amount, checks
         a_htlc.from = from;
         a_htlc.to = to;
         a_htlc.amount = amount;
+        a_htlc.hash_algorithm = hash_algorithm;
         a_htlc.preimage_hash = preimage_hash;
         a_htlc.preimage_size = preimage_size;
         a_htlc.expiration = now + expiration;
@@ -29,7 +30,7 @@ void htlc::insert_sysconfig(uint64_t id, uint64_t value, uint64_t fee_payer) {
     }
 }
 
-// 增加余额
+// Increase account lockout balance
 void htlc::add_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer){
     graphene_assert(quantity.amount >= 0, "Funding operations cannot be negative");
     auto it_user = accounts.find(user);
@@ -59,7 +60,7 @@ void htlc::add_balances(uint64_t user, contract_asset quantity, uint64_t fee_pay
     }
 }
 
-// 减少余额
+// Reduce account lockout balance
 void htlc::sub_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer){
     graphene_assert(quantity.amount >= 0, "Funding operations cannot be negative");
     auto it_user = accounts.find(user);
@@ -102,19 +103,29 @@ uint64_t htlc::get_sysconfig(uint64_t id) {
     return it.value;
 }
 
-void htlc::authverify(uint64_t sender) {
+void htlc::auth_verify(uint64_t sender) {
     uint64_t profit_account_id = get_sysconfig(profit_account_sys_ID);
     graphene_assert(sender == profit_account_id, "Excessive operation");
 }
 
-void htlc::statusverify() {
+void htlc::status_verify() {
     uint64_t platform_status = get_sysconfig(platform_status_sys_ID);
     graphene_assert(platform_status == pf_status_unlock, "The platform is locked and cannot be traded temporarily");
 }
 
-void htlc::my_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, int64_t amount) {
+void htlc::inner_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, int64_t amount) {
     if (amount > 0) {
         withdraw_asset(from, to, asset_id, amount);
     }
+}
+
+void htlc::hash_verify(string t_preimage, checksum256 preimage_hash, string hash_algorithm) {
+    // assert_sha256((char *) &t_preimage_hash, sizeof(t_preimage_hash), (const checksum256 *) &preimage_hash);
+    if (hash_algorithm.compare("sha256") == 0) {
+        checksum256 t_preimage_hash;
+        sha256((char *) &t_preimage, t_preimage.length(), &t_preimage_hash);
+        graphene_assert(preimage_hash == t_preimage_hash, "the preimage is not in line with expectations");
+    }
+    // todo Other hash algorithm verification implementation
 }
 
