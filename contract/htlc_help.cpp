@@ -2,13 +2,14 @@
 
 using namespace graphene;
 
-void htlc::insert_htlc(uint64_t from, uint64_t to, contract_asset amount, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer) {
+void htlc::insert_htlc(uint64_t from, uint64_t to, string hash_algorithm, contract_asset amount, string preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer) {
     uint64_t pk = get_sysconfig(htlc_db_next_id_sys_ID);
     int64_t now = get_head_block_time();
     htlcrecords.emplace(fee_payer, [&](auto &a_htlc) {
         a_htlc.id = pk;
         a_htlc.from = from;
         a_htlc.to = to;
+        a_htlc.hash_algorithm = hash_algorithm;
         a_htlc.amount = amount;
         a_htlc.preimage_hash = preimage_hash;
         a_htlc.preimage_size = preimage_size;
@@ -103,7 +104,6 @@ uint64_t htlc::get_sysconfig(uint64_t id) {
 }
 
 void htlc::auth_verify(uint64_t sender) {
-    // uint64_t profit_account_id = get_sysconfig(profit_account_sys_ID);
     auto itr = sysconfigs.find(profit_account_sys_ID);
     if (itr != sysconfigs.end()) {
         graphene_assert(sender == itr->value, "Excessive operation");
@@ -121,3 +121,33 @@ void htlc::inner_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, i
     }
 }
 
+void htlc::hash_verify(string t_preimage, string preimage_hash, string hash_algorithm) {
+    string t_preimage_hash;
+    if (hash_algorithm.compare("sha256") == 0) {
+        checksum256 t_hash;
+        sha256(t_preimage.c_str(),t_preimage.length(),&t_hash);
+        t_preimage_hash = toHex(t_hash.hash, 32);
+    } else if (hash_algorithm.compare("sha512") == 0) {
+        checksum512 t_hash;
+        sha512(t_preimage.c_str(),t_preimage.length(),&t_hash);
+        t_preimage_hash = toHex(t_hash.hash, 64);
+    } else if (hash_algorithm.compare("ripemd160") == 0) {
+        checksum160 t_hash;
+        ripemd160(t_preimage.c_str(),t_preimage.length(),&t_hash);
+        t_preimage_hash = toHex(t_hash.hash, 20);
+    } else {
+        graphene_assert(false, "The hash algorithm is no longer supported.");
+    }
+
+    graphene_assert(preimage_hash.compare(t_preimage_hash) == 0, "The preimage is not in line with expectations");
+}
+
+
+string htlc::toHex(const uint8_t *c, uint32_t s) {
+    string r;
+    const char *hexStr = "0123456789abcdef";
+    for (uint32_t i = 0; i < s; ++i) {
+        (r += hexStr[(c[i] >> 4)]) += hexStr[(c[i] & 0x0f)];
+    }
+    return r;
+}
