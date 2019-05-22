@@ -29,7 +29,7 @@ void htlc::insert_sysconfig(uint64_t id, uint64_t value, uint64_t fee_payer) {
     }
 }
 
-// 增加余额
+// Increase account lockout balance
 void htlc::add_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer){
     graphene_assert(quantity.amount >= 0, "Funding operations cannot be negative");
     auto it_user = accounts.find(user);
@@ -59,7 +59,7 @@ void htlc::add_balances(uint64_t user, contract_asset quantity, uint64_t fee_pay
     }
 }
 
-// 减少余额
+// Reduce account lockout balance
 void htlc::sub_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer){
     graphene_assert(quantity.amount >= 0, "Funding operations cannot be negative");
     auto it_user = accounts.find(user);
@@ -102,17 +102,20 @@ uint64_t htlc::get_sysconfig(uint64_t id) {
     return it.value;
 }
 
-void htlc::authverify(uint64_t sender) {
-    uint64_t profit_account_id = get_sysconfig(profit_account_sys_ID);
-    graphene_assert(sender == profit_account_id, "Excessive operation");
+void htlc::auth_verify(uint64_t sender) {
+    // uint64_t profit_account_id = get_sysconfig(profit_account_sys_ID);
+    auto itr = sysconfigs.find(profit_account_sys_ID);
+    if (itr != sysconfigs.end()) {
+        graphene_assert(sender == itr->value, "Excessive operation");
+    }
 }
 
-void htlc::statusverify() {
+void htlc::status_verify() {
     uint64_t platform_status = get_sysconfig(platform_status_sys_ID);
     graphene_assert(platform_status == pf_status_unlock, "The platform is locked and cannot be traded temporarily");
 }
 
-void htlc::my_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, int64_t amount) {
+void htlc::inner_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, int64_t amount) {
     if (amount > 0) {
         withdraw_asset(from, to, asset_id, amount);
     }
