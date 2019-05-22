@@ -5,7 +5,7 @@
 + Add other hash algorithm validation implementations
 
 ## 说明
-+ dev_user : 合约发布者
++ dev_user : Contract issuer
 
 ## Contract deployment related
 ### Contract compilation
