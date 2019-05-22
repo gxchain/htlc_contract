@@ -16,7 +16,7 @@ HTLC合约基于hashlock和timelock，实现从存款人(depositor)到收款人(
 
 ```c++
 /// @abi action
-void htlccreate(const std::string& from, const std::string& to, const checksum256& preimage_hash, uint64_t preimage_length, uint64_t expiration)
+void htlccreate(const uint64_t from, const uint64_t to, string hash_algorithm, const string preimage_hash, uint64_t preimage_size, uint64_t expiration);
 {
     // check from, assert to
     // check preimage_length
@@ -69,6 +69,7 @@ htlcrecord表用于存储HTLC合约中锁定的资产和锁信息。
         uint64_t                from; // 存款人（depositor
         uint64_t                to; // 收款人（recipient
         contract_asset          amount; // 资产类型和数量
+        string hash_algorithm; // 采用的hash算法
         checksum256             preimage_hash; // hashlock
         uint64_t                preimage_size; // preimage size
         uint64_t                expiration; // timelock
