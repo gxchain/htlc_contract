@@ -21,7 +21,6 @@ class htlc : public contract
         , accounts(_self, _self)
         , htlcrecords(_self, _self)
         , sysconfigs(_self, _self)
-        , hashlogs(_self, _self)
     {
     }
 
@@ -32,12 +31,12 @@ class htlc : public contract
 
     const uint64_t platform_status_sys_ID = 0;  // Platform status id
     const uint64_t htlc_db_next_id_sys_ID = 1; // The next available primary key in the database
-    const uint64_t profit_account_sys_ID = 2;  // Administrator account id 
+    const uint64_t profit_account_sys_ID = 2;  // Administrator account id
     const uint64_t max_lock_time_sys_ID = 3;  // Maximum expiration time of lock (seconds)
     const uint64_t preimage_max_len_sys_ID = 4; // Record the maximum length of the preimage
 
     // Hash algorithm has been implemented
-    const string has_impl_hash = "sha256_";
+//    const string has_impl_hash = "sha256_";
 
     //@abi action
     void init();
@@ -47,7 +46,7 @@ class htlc : public contract
 
     //@abi action
     //@abi payable
-    void htlccreate(const uint64_t from, const uint64_t to, const string hash_algorithm, const checksum256& preimage_hash, uint64_t preimage_size, uint64_t expiration);
+    void htlccreate(const uint64_t from, const uint64_t to, const checksum256& preimage_hash, uint64_t preimage_size, uint64_t expiration);
 
     //@abi action
     void htlcredeem(const uint64_t htlc_db_id, const string preimage);
@@ -72,20 +71,18 @@ class htlc : public contract
 
     //@abi table htlcrecord i64
     struct htlcrecord {
-        uint64_t id; // 
+        uint64_t id; //
         uint64_t from; // Transaction payer
         uint64_t to; // Transaction recipient
         contract_asset amount; // Asset type and quantity
         checksum256 preimage_hash; // hashlock
-        string hash_algorithm;
         uint64_t preimage_size; // preimage size
         uint64_t expiration; // timelock
 
         uint64_t primary_key() const { return id; }
-        GRAPHENE_SERIALIZE(htlcrecord, (id)(from)(to)(amount)(preimage_hash)(hash_algorithm)(preimage_size)(expiration))
     };
 
-    // System configuration table 
+    // System configuration table
     // @abi table sysconfig i64
     struct sysconfig {
         uint64_t id;
@@ -95,15 +92,6 @@ class htlc : public contract
         GRAPHENE_SERIALIZE(sysconfig, (id)(value))
     };
 
-    //@abi table hashlog i64
-    struct hashlog {
-        uint64_t id; // 
-        checksum256  hash;
-
-        uint64_t primary_key() const { return id; }
-        GRAPHENE_SERIALIZE(hashlog, (id)(hash))
-    };
-
     // Configuration related
     void insert_sysconfig(uint64_t id, uint64_t value, uint64_t fee_payer);
     void update_sysconfig(uint64_t id, uint64_t value, uint64_t fee_payer);
@@ -111,16 +99,14 @@ class htlc : public contract
 
     // Account related
     void add_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer);
-    void sub_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer);
+    void sub_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer); 
     void inner_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, int64_t amount);
 
     // other
     void auth_verify(uint64_t sender);
     void status_verify();
-    void insert_htlc(uint64_t from, uint64_t to, contract_asset amount, string hash_algorithm, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer);
 
-    // Verify that the hash matches the default
-    void hash_verify(string t_preimage, checksum256 preimage_hash, string hash_algorithm);
+    void insert_htlc(uint64_t from, uint64_t to, contract_asset amount, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer);
 
     
 
@@ -133,8 +119,5 @@ class htlc : public contract
     account_index accounts;
     htlcrecord_index htlcrecords;
     sysconfig_index sysconfigs;
-
-    typedef graphene::multi_index<N(hashlog), hashlog> hashlog_index;
-    hashlog_index hashlogs;
 
 };

@@ -24,7 +24,7 @@ void htlc::updateconfig(uint64_t id, uint64_t value) {
 }
 
 // Hash lock transaction creation
-void htlc::htlccreate(const uint64_t from, const uint64_t to, const string hash_algorithm, const checksum256& preimage_hash, uint64_t preimage_size, uint64_t expiration) {
+void htlc::htlccreate(const uint64_t from, const uint64_t to, const checksum256& preimage_hash, uint64_t preimage_size, uint64_t expiration) {
     uint64_t sender = get_trx_sender();
     uint64_t max_lock_time = get_sysconfig(max_lock_time_sys_ID);
     graphene_assert(max_lock_time >= expiration, "The transaction lockout time cannot be longer than the maximum lock time set by the contract.");
@@ -37,14 +37,7 @@ void htlc::htlccreate(const uint64_t from, const uint64_t to, const string hash_
     contract_asset amount{asset_amount, asset_id};
     add_balances(from, amount, sender);
 
-    string::size_type idx;
-    string t_hash_algorithm = hash_algorithm;
-    // t_hash_algorithm.append(hash_algorithm);
-    t_hash_algorithm.append("_");
-    idx = has_impl_hash.find(t_hash_algorithm);
-    graphene_assert(idx != string::npos, "Hash verification algorithm has not been implemented");
-
-    insert_htlc(from, to, amount, hash_algorithm, preimage_hash, preimage_size, expiration, sender);
+    insert_htlc(from, to, amount, preimage_hash, preimage_size, expiration, sender);
 }
 
 // Transaction redemption
@@ -62,14 +55,10 @@ void htlc::htlcredeem(const uint64_t htlc_db_id, const string preimage) {
     int64_t now = get_head_block_time();
     graphene_assert(t_htlc->expiration >= now, "htlc transaction has expired");
 
-    // hash_verify(preimage, t_htlc->preimage_hash, t_htlc->hash_algorithm);
     checksum256 t_preimage_hash;
-    sha256((char *) &preimage, preimage.length(), &t_preimage_hash);
-    // graphene_assert(t_htlc->preimage_hash == t_preimage_hash, "the preimage is not in line with expectations");
-    hashlogs.emplace(sender, [&](auto &a_hashlog) {
-        a_hashlog.id = hashlogs.available_primary_key();
-        a_hashlog.hash = t_preimage_hash;
-    });
+    sha256((char *)preimage.c_str(), preimage.length(), &t_preimage_hash);
+
+    graphene_assert(t_htlc->preimage_hash == t_preimage_hash, "The preimage is not in line with expectations");
 
     sub_balances(t_htlc->from, t_htlc->amount, sender);
     inner_withdraw_asset(_self, t_htlc->to, t_htlc->amount.asset_id, t_htlc->amount.amount);
@@ -118,8 +107,8 @@ void htlc::clear(uint64_t count) {
         }
     }
 
-    for(auto itr = hashlogs.begin(); itr != hashlogs.end();) {
-        itr = hashlogs.erase(itr);
+    for(auto itr = sysconfigs.begin(); itr != sysconfigs.end();) {
+        itr = sysconfigs.erase(itr);
         t_delete_count += 1;
         if (t_delete_count >= count) {
             break;

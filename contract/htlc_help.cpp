@@ -2,7 +2,7 @@
 
 using namespace graphene;
 
-void htlc::insert_htlc(uint64_t from, uint64_t to, contract_asset amount, string hash_algorithm, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer) {
+void htlc::insert_htlc(uint64_t from, uint64_t to, contract_asset amount, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer) {
     uint64_t pk = get_sysconfig(htlc_db_next_id_sys_ID);
     int64_t now = get_head_block_time();
     htlcrecords.emplace(fee_payer, [&](auto &a_htlc) {
@@ -10,7 +10,6 @@ void htlc::insert_htlc(uint64_t from, uint64_t to, contract_asset amount, string
         a_htlc.from = from;
         a_htlc.to = to;
         a_htlc.amount = amount;
-        a_htlc.hash_algorithm = hash_algorithm;
         a_htlc.preimage_hash = preimage_hash;
         a_htlc.preimage_size = preimage_size;
         a_htlc.expiration = now + expiration;
@@ -104,8 +103,11 @@ uint64_t htlc::get_sysconfig(uint64_t id) {
 }
 
 void htlc::auth_verify(uint64_t sender) {
-    uint64_t profit_account_id = get_sysconfig(profit_account_sys_ID);
-    graphene_assert(sender == profit_account_id, "Excessive operation");
+    // uint64_t profit_account_id = get_sysconfig(profit_account_sys_ID);
+    auto itr = sysconfigs.find(profit_account_sys_ID);
+    if (itr != sysconfigs.end()) {
+        graphene_assert(sender == itr->value, "Excessive operation");
+    }
 }
 
 void htlc::status_verify() {
@@ -117,15 +119,5 @@ void htlc::inner_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, i
     if (amount > 0) {
         withdraw_asset(from, to, asset_id, amount);
     }
-}
-
-void htlc::hash_verify(string t_preimage, checksum256 preimage_hash, string hash_algorithm) {
-    // assert_sha256((char *) &t_preimage_hash, sizeof(t_preimage_hash), (const checksum256 *) &preimage_hash);
-    if (hash_algorithm.compare("sha256") == 0) {
-        checksum256 t_preimage_hash;
-        sha256((char *) &t_preimage, t_preimage.length(), &t_preimage_hash);
-        graphene_assert(preimage_hash == t_preimage_hash, "the preimage is not in line with expectations");
-    }
-    // todo Other hash algorithm verification implementation
 }
 
