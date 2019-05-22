@@ -11,17 +11,7 @@
 using namespace graphene;
 
 using std::string;
-
-const uint64_t pf_status_unlock = 1; //可使用
-const uint64_t pf_status_lock = 2; // 锁定
-const uint64_t max_lock_time_value = 24 * 60 * 60; // 最大锁定时间， 默认24小时
-const uint64_t preimage_max_len = 64; // 原象字符串得最大长度
-
-const uint64_t platform_status_sys_ID = 0;  // 平台状态id
-const uint64_t htlc_db_next_id_sys_ID = 1; // hash锁定数据库下一个可用主键
-const uint64_t profit_account_sys_ID = 2;  // 管理员账号id 
-const uint64_t max_lock_time_sys_ID = 3;  // hash 锁定得最大过期时间
-const uint64_t preimage_max_len_sys_ID = 4; // 记录原象得最大长度
+using std::vector;
 
 class htlc : public contract
 {
@@ -34,11 +24,23 @@ class htlc : public contract
     {
     }
 
-    // 初始化
+    const uint64_t pf_status_unlock = 1; //Available
+    const uint64_t pf_status_lock = 2; // locking
+    const uint64_t max_lock_time_value = 24 * 60 * 60; // Maximum lock time, default 24 hours, can be updated using the configuration update operation interface
+    const uint64_t preimage_max_len = 64; // The preimage string has the maximum length
+
+    const uint64_t platform_status_sys_ID = 0;  // Platform status id
+    const uint64_t htlc_db_next_id_sys_ID = 1; // The next available primary key in the database
+    const uint64_t profit_account_sys_ID = 2;  // Administrator account id
+    const uint64_t max_lock_time_sys_ID = 3;  // Maximum expiration time of lock (seconds)
+    const uint64_t preimage_max_len_sys_ID = 4; // Record the maximum length of the preimage
+
+    // Hash algorithm has been implemented
+//    const string has_impl_hash = "sha256_";
+
     //@abi action
     void init();
 
-    // 配置更新
     //@abi action
     void updateconfig(uint64_t id, uint64_t value);
 
@@ -52,16 +54,16 @@ class htlc : public contract
     //@abi action
     void htlcrefund(const uint64_t htlc_db_id);
 
-    // 测试时添加的方法，正式部署要去掉
+    // Method added during testing
     //@abi action
     void clear(uint64_t count);
 
-    // 账户记录
+    // User contract trading account record
     //@abi table account i64
     struct account {
         uint64_t owner;
-        // 可用余额
-        std::vector<contract_asset> balances;
+        // Account transaction balance
+        vector<contract_asset> balances;
 
         uint64_t primary_key() const { return owner; }
         GRAPHENE_SERIALIZE(account, (owner)(balances))
@@ -69,18 +71,18 @@ class htlc : public contract
 
     //@abi table htlcrecord i64
     struct htlcrecord {
-        uint64_t                id; // 自增id
-        uint64_t                from; // 存款人（depositor
-        uint64_t                to; // 收款人（recipient
-        contract_asset          amount; // 资产类型和数量
-        checksum256             preimage_hash; // hashlock
-        uint64_t                preimage_size; // preimage size
-        uint64_t                expiration; // timelock
+        uint64_t id; //
+        uint64_t from; // Transaction payer
+        uint64_t to; // Transaction recipient
+        contract_asset amount; // Asset type and quantity
+        checksum256 preimage_hash; // hashlock
+        uint64_t preimage_size; // preimage size
+        uint64_t expiration; // timelock
 
         uint64_t primary_key() const { return id; }
     };
 
-    // 系统配置表 128
+    // System configuration table
     // @abi table sysconfig i64
     struct sysconfig {
         uint64_t id;
@@ -90,18 +92,19 @@ class htlc : public contract
         GRAPHENE_SERIALIZE(sysconfig, (id)(value))
     };
 
-    // 配置相关
+    // Configuration related
     void insert_sysconfig(uint64_t id, uint64_t value, uint64_t fee_payer);
     void update_sysconfig(uint64_t id, uint64_t value, uint64_t fee_payer);
     uint64_t get_sysconfig(uint64_t id);
 
-    // 账户相关
+    // Account related
     void add_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer);
     void sub_balances(uint64_t user, contract_asset quantity, uint64_t fee_payer); 
-    void my_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, int64_t amount);
+    void inner_withdraw_asset(uint64_t from, uint64_t to, uint64_t asset_id, int64_t amount);
 
-    void authverify(uint64_t sender);
-    void statusverify();
+    // other
+    void auth_verify(uint64_t sender);
+    void status_verify();
 
     void insert_htlc(uint64_t from, uint64_t to, contract_asset amount, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer);
 

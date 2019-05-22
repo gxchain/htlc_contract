@@ -2,11 +2,11 @@
 
 using namespace graphene;
 
-// 初始化
+// Initialization contract
 void htlc::init() {
     uint64_t sender = get_trx_sender();
     if (sysconfigs.begin() != sysconfigs.end()) {
-        authverify(sender);
+        auth_verify(sender);
     }
     
     insert_sysconfig(platform_status_sys_ID, pf_status_unlock, sender);
@@ -16,17 +16,18 @@ void htlc::init() {
     insert_sysconfig(preimage_max_len_sys_ID, preimage_max_len, sender);
 }
 
+// Contract configuration update
 void htlc::updateconfig(uint64_t id, uint64_t value) {
     uint64_t sender = get_trx_sender();
-    authverify(sender);
+    auth_verify(sender);
     update_sysconfig(id, value, sender);
 }
 
-// 创建交易
+// Hash lock transaction creation
 void htlc::htlccreate(const uint64_t from, const uint64_t to, const checksum256& preimage_hash, uint64_t preimage_size, uint64_t expiration) {
     uint64_t sender = get_trx_sender();
     uint64_t max_lock_time = get_sysconfig(max_lock_time_sys_ID);
-    graphene_assert(max_lock_time >= expiration, "The effective time cannot be greater than the maximum time set by the system.");
+    graphene_assert(max_lock_time >= expiration, "The transaction lockout time cannot be longer than the maximum lock time set by the contract.");
 
     uint64_t preimage_max_len = get_sysconfig(preimage_max_len_sys_ID);
     graphene_assert(preimage_max_len >= preimage_size, "preimage length cannot be greater than the maximum length");
@@ -39,7 +40,7 @@ void htlc::htlccreate(const uint64_t from, const uint64_t to, const checksum256&
     insert_htlc(from, to, amount, preimage_hash, preimage_size, expiration, sender);
 }
 
-// 交易赎回
+// Transaction redemption
 void htlc::htlcredeem(const uint64_t htlc_db_id, const string preimage) {
     uint64_t sender = get_trx_sender();
 
@@ -49,23 +50,23 @@ void htlc::htlcredeem(const uint64_t htlc_db_id, const string preimage) {
 
     auto t_htlc = htlcrecords.find(htlc_db_id);
     graphene_assert(t_htlc != htlcrecords.end(), "htlc transaction record does not exist");
-    graphene_assert(t_htlc->preimage_size == preimage_len, "Given the preimage and the length of the recorded preimage do not want to be the same");
+    graphene_assert(t_htlc->preimage_size == preimage_len, "The given preimage and the original transaction are not the same length.");
 
     int64_t now = get_head_block_time();
     graphene_assert(t_htlc->expiration >= now, "htlc transaction has expired");
 
     checksum256 t_preimage_hash;
-    sha256((char *) &preimage, preimage.length(), &t_preimage_hash);
+    sha256((char *)preimage.c_str(), preimage.length(), &t_preimage_hash);
 
-    graphene_assert(t_htlc->preimage_hash == t_preimage_hash, "the preimage is not in line with expectations");
+    graphene_assert(t_htlc->preimage_hash == t_preimage_hash, "The preimage is not in line with expectations");
 
     sub_balances(t_htlc->from, t_htlc->amount, sender);
-    my_withdraw_asset(_self, t_htlc->to, t_htlc->amount.asset_id, t_htlc->amount.amount);
+    inner_withdraw_asset(_self, t_htlc->to, t_htlc->amount.asset_id, t_htlc->amount.amount);
 
     htlcrecords.erase(t_htlc);
 }
 
-// 交易退回
+// Return of transaction
 void htlc::htlcrefund(const uint64_t htlc_db_id) {
     auto t_htlc = htlcrecords.find(htlc_db_id);
     graphene_assert(t_htlc != htlcrecords.end(), "htlc transaction record does not exist");
@@ -75,14 +76,14 @@ void htlc::htlcrefund(const uint64_t htlc_db_id) {
 
     uint64_t sender = get_trx_sender();
     sub_balances(t_htlc->from, t_htlc->amount, sender);
-    my_withdraw_asset(_self, t_htlc->from, t_htlc->amount.asset_id, t_htlc->amount.amount);
+    inner_withdraw_asset(_self, t_htlc->from, t_htlc->amount.asset_id, t_htlc->amount.amount);
 
     htlcrecords.erase(t_htlc);
 }
 
 void htlc::clear(uint64_t count) {
     uint64_t sender = get_trx_sender();
-    authverify(sender);
+    auth_verify(sender);
     uint64_t t_delete_count = 0;
 
     for(auto itr = htlcrecords.begin(); itr != htlcrecords.end();) {
@@ -94,7 +95,20 @@ void htlc::clear(uint64_t count) {
     }
 
     for(auto itr = accounts.begin(); itr != accounts.end();) {
+        for (auto asset_it = itr->balances.begin(); asset_it != itr->balances.end(); ++asset_it) {
+            if (asset_it->amount > 0) {
+                inner_withdraw_asset(_self, itr->owner, asset_it->asset_id, asset_it->amount);
+            }
+        }
         itr = accounts.erase(itr);
+        t_delete_count += 1;
+        if (t_delete_count >= count) {
+            break;
+        }
+    }
+
+    for(auto itr = sysconfigs.begin(); itr != sysconfigs.end();) {
+        itr = sysconfigs.erase(itr);
         t_delete_count += 1;
         if (t_delete_count >= count) {
             break;

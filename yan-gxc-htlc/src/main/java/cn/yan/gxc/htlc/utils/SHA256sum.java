@@ -248,6 +248,7 @@ public class SHA256sum {
      * d4faff0ab6d1005ed0f91271ff00fbab090392bb5e4cc0ed1d50ec7654326cfc
      */
     public static void main(String[] args) throws IOException {
+        // 这个有问题
         byte[] binStr = YanStrUtils.hexStringToByte("9c490308664645d104eaef0a80c24ec253f8f656ef7d0832929ce46a1655b35c");
         SHA256sum sha256sum = new SHA256sum(binStr);
         System.out.println(sha256sum);
