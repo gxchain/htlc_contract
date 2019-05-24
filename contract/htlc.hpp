@@ -36,7 +36,7 @@ class htlc : public contract
     const uint64_t preimage_max_len_sys_ID = 4; // Record the maximum length of the preimage
 
     // Hash algorithm has been implemented
-//    const string has_impl_hash = "sha256_";
+    const string has_impl_hash = "sha256_sha512_ripemd160_";
 
     //@abi action
     void init();
@@ -46,7 +46,7 @@ class htlc : public contract
 
     //@abi action
     //@abi payable
-    void htlccreate(const uint64_t from, const uint64_t to, const checksum256& preimage_hash, uint64_t preimage_size, uint64_t expiration);
+    void htlccreate(const uint64_t from, const uint64_t to, string hash_algorithm, const string preimage_hash, uint64_t preimage_size, uint64_t expiration);
 
     //@abi action
     void htlcredeem(const uint64_t htlc_db_id, const string preimage);
@@ -75,7 +75,8 @@ class htlc : public contract
         uint64_t from; // Transaction payer
         uint64_t to; // Transaction recipient
         contract_asset amount; // Asset type and quantity
-        checksum256 preimage_hash; // hashlock
+        string hash_algorithm; //
+        string preimage_hash; // hashlock
         uint64_t preimage_size; // preimage size
         uint64_t expiration; // timelock
 
@@ -106,7 +107,10 @@ class htlc : public contract
     void auth_verify(uint64_t sender);
     void status_verify();
 
-    void insert_htlc(uint64_t from, uint64_t to, contract_asset amount, checksum256 preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer);
+    void insert_htlc(uint64_t from, uint64_t to, string hash_algorithm, contract_asset amount, string preimage_hash, uint64_t preimage_size, uint64_t expiration, uint64_t fee_payer);
+
+    void hash_verify(string t_preimage, string preimage_hash, string hash_algorithm);
+    string toHex(const uint8_t *c, uint32_t s);
 
     
 

@@ -16,7 +16,7 @@ action definition:
 
 ``` c++
 /// @abi action
-void htlccreate(const std::string& from, const std::string& to, const checksum256& preimage_hash, uint64_t preimage_length, uint64_t expiration)
+void htlccreate(const std::string& from, const std::string& to, string hash_algorithm, const checksum256& preimage_hash, uint64_t preimage_length, uint64_t expiration)
 {
     // check from, assert to
     // check preimage_length
@@ -72,6 +72,7 @@ The `htlcrecord` table is used to store the asset and lock information in the HT
         uint64_t                from; // depositor
         uint64_t                to; // recipient
         contract_asset          amount; // asset type and amount
+        string hash_algorithm; // 
         checksum256             preimage_hash; // hashlock
         uint64_t                preimage_size; // preimage size
         uint64_t                expiration; // timelock
