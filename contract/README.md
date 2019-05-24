@@ -44,7 +44,7 @@ call_contract dev_user htlc null updateconfig "{\"id\":1,\"value\":1}" GXS true
 ``````
 void htlccreate(const uint64_t from, const uint64_t to, string hash_algorithm, const string preimage_hash, uint64_t preimage_size, uint64_t expiration);
 
-call_contract dev_user htlc {"amount":100000,"asset_id":1.3.1} htlccreate "{\"from\":980,\"to\":979, \"preimage_hash\":\"0782709d75f72a13026c8fbf8ba761045210bd0bbeae5678a16752a7e2ce3a31\",\"preimage_size\":64,\"expiration\":3600}" GXS true
+call_contract dev_user htlc {"amount":100000,"asset_id":1.3.1} htlccreate "{\"from\":980,\"to\":979, \"hash_algorithm\":\"sha256\", \"preimage_hash\":\"0782709d75f72a13026c8fbf8ba761045210bd0bbeae5678a16752a7e2ce3a31\",\"preimage_size\":64,\"expiration\":3600}" GXS true
 ``````
 ### Get assets by locking the preimage
 ``````
